@@ -140,6 +140,7 @@ public class NPCLaneFollowBehaviour : NPCBehaviourBase
 
         currentMapLane = lane;
         SetLaneData(currentMapLane.mapWorldPositions);
+        Debug.Log($"transform.position: {transform.position}");
         controller.SetLastPosRot(transform.position, transform.rotation);
         isLaneDataSet = true;
     }
@@ -945,8 +946,11 @@ public class NPCLaneFollowBehaviour : NPCBehaviourBase
     }
     #endregion
 
-    public void SetFollowClosestLane(float maxSpeed, bool isLaneChange)
+    public void SetFollowClosestLane(float initialSpeed, float maxSpeed, bool isLaneChange)
+    // public void SetFollowClosestLane(float maxSpeed, bool isLaneChange)
     {
+        currentSpeed = initialSpeed;
+
         var position = transform.position;
 
         var lane = SimulatorManager.Instance.MapManager.GetClosestLane(position);

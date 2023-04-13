@@ -144,10 +144,12 @@ namespace Simulator.Web
         {
             if (dir == null)
             {
+            	Debug.Log("null directory");
                 return;
             }
 
             var manifestFile = dir.Find("manifest.json");
+            Debug.Log($"dir: {dir}, manifestFile: {manifestFile}");
             if (manifestFile != null && manifestFile.IsFile)
             {
                 Debug.Log($"found manifest at {manifestFile.Path}");
@@ -488,6 +490,7 @@ namespace Simulator.Web
 
         private static void LoadNPCAsset(Manifest manifest, VfsEntry dir)
         {
+            Debug.Log($"LoadNPCAsset Start!! dir: {dir}");
             if (manifest.assetFormat != BundleConfig.Versions[BundleConfig.BundleTypes.NPC])
             {
                 throw new Exception($"manifest version mismatch, expected {BundleConfig.Versions[BundleConfig.BundleTypes.NPC]}, got {manifest.assetFormat}");
@@ -560,6 +563,7 @@ namespace Simulator.Web
                         if (prefab != null)
                         {
                             var meta = prefab.GetComponent<NPCMetaData>();
+                            Debug.Log($"meta: {meta} Plugin NULL");
                             if (meta != null)
                             {
                                 NPCVehicles.Add(manifest.assetName, new NPCAssetData()
@@ -600,6 +604,7 @@ namespace Simulator.Web
                     GameObject prefab = pluginBundle.LoadAsset<GameObject>(mainPrefabName);
 
                     var meta = prefab.GetComponent<NPCMetaData>();
+                    Debug.Log($"meta: {meta}");
 
                     if (meta != null)
                     {

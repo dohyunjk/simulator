@@ -16,8 +16,10 @@ namespace Simulator.Api.Commands
 
         public void Execute(JSONNode args)
         {
+            Debug.Log("VehicleFollowClosestLane");
             var uid = args["uid"].Value;
             var follow = args["follow"].AsBool;
+            var initialSpeed = args["initial_speed"].AsFloat;
             var maxSpeed = args["max_speed"].AsFloat;
             var isLaneChange = args["isLaneChange"].AsBool;
             var api = ApiManager.Instance;
@@ -28,13 +30,14 @@ namespace Simulator.Api.Commands
                 if (npc == null)
                 {
                     api.SendError(this, $"Agent '{uid}' is not a NPC agent");
+                    Debug.Log($"Agent '{uid}' is not a NPC agent");
                     return;
                 }
 
                 if (follow)
                 {
                     var laneFollow = npc.SetBehaviour<NPCLaneFollowBehaviour>();
-                    laneFollow.SetFollowClosestLane(maxSpeed, isLaneChange);
+                    laneFollow.SetFollowClosestLane(initialSpeed, maxSpeed, isLaneChange);
                 }
                 else
                 {
@@ -46,6 +49,7 @@ namespace Simulator.Api.Commands
             else
             {
                 api.SendError(this, $"Agent '{uid}' not found");
+                Debug.Log($"Agent '{uid}' not found");
             }
         }
     }

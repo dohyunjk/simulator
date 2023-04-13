@@ -156,6 +156,7 @@ public class NPCManager : MonoBehaviour, IMessageSender, IMessageReceiver
         {
             Loader.Instance.CurrentSimulation.NPCs = Simulator.Web.Config.NPCVehicles.Values.ToArray();
         }
+        Debug.Log($"NPCs: {Loader.Instance.CurrentSimulation.NPCs}");
 
         foreach (var data in Loader.Instance.CurrentSimulation.NPCs)
         {
