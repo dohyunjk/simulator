@@ -58,11 +58,14 @@ public class MapManager : MonoBehaviour
     }
 
     // ref: https://forum.unity.com/threads/bounds-contains-is-not-working-at-all-as-expected.483628/#post-3147770
-    public bool DoesColliderContainsPoint(Transform colliderTransform, Vector3 point)
+    public bool DoesColliderContainsPoint(BoxCollider collider, Vector3 point)
     {
-        Vector3 localPoint = colliderTransform.InverseTransformPoint(point);
-        if (Mathf.Abs(localPoint.x) < 0.5f && Mathf.Abs(localPoint.y) < 0.5f && Mathf.Abs(localPoint.z) < 0.5f)
+        Vector3 localPoint = collider.transform.InverseTransformPoint(point);
+        if (Mathf.Abs(localPoint.x) < collider.size.x * 0.5f
+                && Mathf.Abs(localPoint.y) < collider.size.y * 0.5f
+                && Mathf.Abs(localPoint.z) < collider.size.z * 0.5f)
             return true;
+
         return false;
     }
 
@@ -74,7 +77,7 @@ public class MapManager : MonoBehaviour
         var colliders = lane.GetComponentsInChildren<BoxCollider>();
         foreach (var collider in colliders)
         {
-            if (DoesColliderContainsPoint(collider.transform, point))
+            if (DoesColliderContainsPoint(collider, point))
             {
                 return true;
             }
