@@ -57,6 +57,61 @@ public class MapManager : MonoBehaviour
         intersections.ForEach(intersection => intersection.SetTriggerAndState());
     }
 
+    // ref: https://forum.unity.com/threads/bounds-contains-is-not-working-at-all-as-expected.483628/#post-3147770
+    public bool DoesColliderContainsPoint(BoxCollider collider, Vector3 point)
+    {
+        Vector3 localPoint = collider.transform.InverseTransformPoint(point);
+        if (Mathf.Abs(localPoint.x) < collider.size.x * 0.5f
+                && Mathf.Abs(localPoint.y) < collider.size.y * 0.5f
+                && Mathf.Abs(localPoint.z) < collider.size.z * 0.5f)
+            return true;
+
+        return false;
+    }
+
+    public bool IsPointInsideLane(Vector3 point, MapTrafficLane lane)
+    {
+        if (lane.mapWorldPositions.Count < 2)
+            return false;
+
+        var colliders = lane.GetComponentsInChildren<BoxCollider>();
+        foreach (var collider in colliders)
+        {
+            if (DoesColliderContainsPoint(collider, point))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public MapTrafficLane GetClosestLaneOptimized(Vector3 position)
+    {
+        MapTrafficLane result = null;
+        float minDist = float.PositiveInfinity;
+
+        foreach (var lane in allLanes)
+        {
+            if (IsPointInsideLane(position, lane))
+            {
+                result = lane;
+                break;
+            }
+
+            foreach (var p in lane.mapWorldPositions)
+            {
+                float d = Vector3.SqrMagnitude(position - p);
+                if (d < minDist)
+                {
+                    minDist = d;
+                    result = lane;
+                }
+            }
+        }
+
+        return result;
+    }
+
     // GetClosestLane only checks traffic lanes.
     // This function check all lanes.
     public MapTrafficLane GetClosestLaneAll(Vector3 position)
