@@ -23,7 +23,7 @@ namespace Simulator.Api.Commands
             var position = args["position"].ReadVector3();
             MapTrafficLane closestLane = manager.GetClosestLaneOptimized(position);
 
-            var result = new JSONNumber(closestLane.id);
+            var result = new JSONString(closestLane.id);
             api.SendResult(this, result);
         }
     }
