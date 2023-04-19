@@ -21,7 +21,7 @@ namespace Simulator.Api.Commands
             var manager = SimulatorManager.Instance.MapManager;
 
             var position = args["position"].ReadVector3();
-            MapTrafficLane closestLane = manager.GetClosestLane(position);
+            MapTrafficLane closestLane = manager.GetClosestLaneOptimized(position);
 
             var result = new JSONNumber(closestLane.id);
             api.SendResult(this, result);
