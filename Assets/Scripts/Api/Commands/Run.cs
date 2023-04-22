@@ -42,7 +42,12 @@ namespace Simulator.Api.Commands
                 api.FrameLimit = 0;
             }
 
-            sim.AnalysisManager.AnalysisInit();
+            string filename = args["filename"].Value;
+            if (string.IsNullOrEmpty(filename))
+            {
+                filename = null;
+            }
+            sim.AnalysisManager.AnalysisInit(filename);
         }
     }
 }
