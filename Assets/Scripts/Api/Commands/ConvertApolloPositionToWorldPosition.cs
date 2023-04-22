@@ -27,9 +27,9 @@ namespace Simulator.Api.Commands
             Vector3 anyPosOnUnity = SimulatorManager.Instance.MapManager.GetLane(0).mapWorldPositions[0];
 
             Vector3 unityPos = new Vector3(
-                    (double)-position.y + mapOrigin.OriginNorthing,
+                    -position.y + (float)mapOrigin.OriginNorthing,
                     anyPosOnUnity.y,
-                    (double)position.x - mapOrigin.OriginEasting
+                    position.x - (float)mapOrigin.OriginEasting
             );
 
             var result = new JSONObject();
