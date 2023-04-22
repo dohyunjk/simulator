@@ -88,7 +88,7 @@ namespace Simulator.Analysis
         {
             if (!SimulatorManager.Instance.IsAPI)
             {
-                AnalysisInit();
+                AnalysisInit(null);
             }
             Loader.Instance.Network.MessagesManager?.RegisterObject(this);
         }
@@ -124,7 +124,7 @@ namespace Simulator.Analysis
             }
         }
 
-        public void AnalysisInit()
+        public void AnalysisInit(string filename)
         {
             if (Init)
             {
@@ -166,7 +166,14 @@ namespace Simulator.Analysis
                     var sensorType = sensorBase.GetType().GetCustomAttribute<SensorType>();
                     if (sensorType.Name == "Video Recording")
                     {
-                        sensorBase.GetType().GetMethod("StartRecording").Invoke(sensorBase, new object[] { null });
+                        if (filename == null)
+                        {
+                            sensorBase.GetType().GetMethod("StartRecording").Invoke(sensorBase, new object[] { null });
+                        }
+                        else
+                        {
+                            sensorBase.GetType().GetMethod("StartRecording").Invoke(sensorBase, new object[] { filename });
+                        }
                     }
                 });
             }
