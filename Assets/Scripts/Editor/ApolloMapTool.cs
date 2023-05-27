@@ -884,6 +884,37 @@ namespace Simulator.Editor
                     width = laneHalfWidth,
                 });
 
+                // Config road samples
+                float leftRoadSample = ((adMapLane.laneCount - adMapLane.laneNumber) * 2 + 1) * laneHalfWidth;
+                float rightRoadSample = ((adMapLane.laneNumber - 1) * 2 + 1) * laneHalfWidth;
+
+                // When road is not consisted with single lane
+                if (adMapLane.laneCount > 1) {
+                    var leftMostLane = adMapLane;
+                    // Find left-most lane in the road
+                    while (leftMostLane.leftLaneForward != null && leftMostLane.leftLaneReverse == null) {
+                        leftMostLane = leftMostLane.leftLaneForward;
+                    }
+                    var closestReverseLane = leftMostLane.leftLaneReverse;
+                    // Add Reverse lane's width to its left road sample
+                    if (closestReverseLane != null) {
+                        leftRoadSample += (closestReverseLane.laneCount) * 2 * laneHalfWidth;
+                    }
+                }
+
+                List<HD.LaneSampleAssociation> leftRoadAssociations = new List<HD.LaneSampleAssociation>();
+                leftRoadAssociations.Add(new HD.LaneSampleAssociation()
+                {
+                    s = 0,
+                    width = leftRoadSample,
+                });
+                List<HD.LaneSampleAssociation> rightRoadAssociations = new List<HD.LaneSampleAssociation>();
+                rightRoadAssociations.Add(new HD.LaneSampleAssociation()
+                {
+                    s = 0,
+                    width = rightRoadSample,
+                });
+
                 for (int i = 0; i < worldPoses.Count; i++)
                 {
                     Vector3 curPt = worldPoses[i];
@@ -915,6 +946,16 @@ namespace Simulator.Editor
                         {
                             s = mLength,
                             width = laneHalfWidth,
+                        });
+                        leftRoadAssociations.Add(new HD.LaneSampleAssociation()
+                        {
+                            s = mLength,
+                            width = leftRoadSample,
+                        });
+                        rightRoadAssociations.Add(new HD.LaneSampleAssociation()
+                        {
+                            s = mLength,
+                            width = rightRoadSample,
                         });
 
                         lLength += (leftBoundPoses[i] - leftBoundPoses[i - 1]).magnitude;
@@ -1122,9 +1163,9 @@ namespace Simulator.Editor
                     lane.successor_id.AddRange(successor_ids);
 
                 lane.left_sample.AddRange(associations);
-                lane.left_road_sample.AddRange(associations);
+                lane.left_road_sample.AddRange(leftRoadAssociations);
                 lane.right_sample.AddRange(associations);
-                lane.right_road_sample.AddRange(associations);
+                lane.right_road_sample.AddRange(rightRoadAssociations);
                 if (adMapLane.leftLaneForward != null)
                     lane.left_neighbor_forward_lane_id.AddRange(new List<HD.Id>() { HdId(adMapLane.leftLaneForward.Id), } );
                 if (adMapLane.rightLaneForward != null)
