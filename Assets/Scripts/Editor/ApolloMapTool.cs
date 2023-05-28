@@ -250,6 +250,29 @@ namespace Simulator.Editor
         }
     }
 
+    class ADMapPncJunction : ADMap
+    {
+        public string Id
+        {
+            get;
+            set;
+        }
+        public List<Vector3> mapWorldPositions;
+        public static int junctionStaticId = 0;
+        public ADMapPncJunction() {}
+        public ADMapPncJunction(MapJunction junction)
+        {
+            Id = junction.id;
+            mapWorldPositions = new List<Vector3>(junction.mapWorldPositions);
+        }
+
+        public ADMapPncJunction(MapJunction junction, string id)
+        {
+            Id = id;
+            mapWorldPositions = new List<Vector3>(junction.mapWorldPositions);
+        }
+    }
+
     class ADMapSign : ADMap
     {
         public string Id
@@ -342,6 +365,7 @@ namespace Simulator.Editor
         public Dictionary<string, HD.Id> crossWalkOverlapIds = new Dictionary<string, HD.Id>();
         public Dictionary<string, HD.Id> yieldSignOverlapIds = new Dictionary<string, HD.Id>();
         public Dictionary<string, HD.Id> junctionOverlapIds = new Dictionary<string, HD.Id>();
+        public Dictionary<string, HD.Id> pncJunctionOverlapIds = new Dictionary<string, HD.Id>();
         public Dictionary<string, HD.Id> laneOverlapIds = new Dictionary<string, HD.Id>();
 
         public float mLength;
@@ -357,6 +381,7 @@ namespace Simulator.Editor
         }
         public Dictionary<string, HD.Id> laneOverlapIds = new Dictionary<string, HD.Id>();
         public Dictionary<string, HD.Id> junctionOverlapIds = new Dictionary<string, HD.Id>();
+        public Dictionary<string, HD.Id> pncJunctionOverlapIds = new Dictionary<string, HD.Id>();
         public Dictionary<string, List<HD.ObjectOverlapInfo>> laneOverlapInfos= new Dictionary<string, List<HD.ObjectOverlapInfo>>();
     }
 
@@ -369,6 +394,7 @@ namespace Simulator.Editor
         }
         public Dictionary<string, HD.Id> laneOverlapIds = new Dictionary<string, HD.Id>();
         public Dictionary<string, HD.Id> junctionOverlapIds = new Dictionary<string, HD.Id>();
+        public Dictionary<string, HD.Id> pncJunctionOverlapIds = new Dictionary<string, HD.Id>();
         public Dictionary<GameObject, List<HD.ObjectOverlapInfo>> laneOverlapInfos= new Dictionary<GameObject, List<HD.ObjectOverlapInfo>>();
     }
 
@@ -416,6 +442,23 @@ namespace Simulator.Editor
     }
 
     public class JunctionOverlapInfo : OverlapInfo
+    {
+        public HD.Id id
+        {
+            get;
+            set;
+        }
+        public HD.Polygon polygon;
+        public Dictionary<string, HD.Id> laneOverlapIds = new Dictionary<string, HD.Id>();
+
+        public Dictionary<string, HD.Id> signalOverlapIds = new Dictionary<string, HD.Id>();
+        public Dictionary<string, HD.Id> stopSignOverlapIds = new Dictionary<string, HD.Id>();
+        public Dictionary<string, HD.Id> parkingOverlapIds = new Dictionary<string, HD.Id>();
+        public Dictionary<string, HD.Id> clearAreaOverlapIds = new Dictionary<string, HD.Id>();
+        public Dictionary<string, HD.Id> crossWalkOverlapIds = new Dictionary<string, HD.Id>();
+    }
+
+    public class PncJunctionOverlapInfo : OverlapInfo
     {
         public HD.Id id
         {
@@ -483,6 +526,7 @@ namespace Simulator.Editor
         HashSet<string> laneHasParkingSpace;
         HashSet<string> laneHasSpeedBump;
         HashSet<string> laneHasJunction;
+        HashSet<string> laneHasPncJunction;
         HashSet<string> laneHasClearArea;
         HashSet<string> laneHasCrossWalk;
         // Signal
@@ -495,6 +539,8 @@ namespace Simulator.Editor
         Dictionary<string, CrossWalkOverlapInfo> crossWalkOverlapsInfo;
         // Junction
         Dictionary<string, JunctionOverlapInfo> junctionOverlapsInfo;
+        // Pnc Junction
+        Dictionary<string, PncJunctionOverlapInfo> pncJunctionOverlapsInfo;
         // Speedbump
         Dictionary<string, SpeedBumpOverlapInfo> speedBumpOverlapsInfo;
         // Parking Space
@@ -554,6 +600,7 @@ namespace Simulator.Editor
             laneHasParkingSpace = new HashSet<string>();
             laneHasSpeedBump = new HashSet<string>();
             laneHasJunction = new HashSet<string>();
+            laneHasPncJunction = new HashSet<string>();
             laneHasClearArea = new HashSet<string>();
             laneHasCrossWalk = new HashSet<string>();
 
@@ -567,6 +614,8 @@ namespace Simulator.Editor
             crossWalkOverlapsInfo = new Dictionary<string, CrossWalkOverlapInfo>();
             // Junction
             junctionOverlapsInfo = new Dictionary<string, JunctionOverlapInfo>();
+            // PNC-Junction
+            pncJunctionOverlapsInfo = new Dictionary<string, PncJunctionOverlapInfo>();
             // Speed Bump
             speedBumpOverlapsInfo = new Dictionary<string, SpeedBumpOverlapInfo>();
             // Parking Space
@@ -995,6 +1044,14 @@ namespace Simulator.Editor
                     foreach (var junctionOverlapId in laneOverlapsInfo[adMapLane.Id].junctionOverlapIds)
                     {
                         lane.overlap_id.Add(junctionOverlapId.Value);
+                    }
+                }
+
+                if (laneHasPncJunction.Contains(adMapLane.Id))
+                {
+                    foreach (var pncJunctionOverlapId in laneOverlapsInfo[adMapLane.Id].pncJunctionOverlapIds)
+                    {
+                        lane.overlap_id.Add(pncJunctionOverlapId.Value);
                     }
                 }
 
@@ -1670,9 +1727,11 @@ namespace Simulator.Editor
                 foreach (var junction in junctionList)
                 {
                     string junctionId = null;
+                    string pncJunctionId = null;
                     foreach (var j in adMapJunctions.Where(j => j.Id == junction.id))
                     {
                         junctionId = j.Id;
+                        pncJunctionId = "PNC_" + j.Id;
                     }
 
                     // LaneSegment
@@ -1689,8 +1748,15 @@ namespace Simulator.Editor
                         junctionOverlapsInfo.GetOrCreate(junctionId).laneOverlapIds.Add(laneId, overlapId);
                         laneOverlapsInfo.GetOrCreate(laneId).junctionOverlapIds.Add(junctionId, overlapId);
 
+                        var pncOverlapId = HdId($"overlap_pnc_junction_I{intersections.IndexOf(intersection)}_PNC_J{junctionList.IndexOf(junction)}_{laneId}");
+                        pncJunctionOverlapsInfo.GetOrCreate(pncJunctionId).laneOverlapIds.Add(laneId, pncOverlapId);
+                        laneOverlapsInfo.GetOrCreate(laneId).pncJunctionOverlapIds.Add(pncJunctionId, pncOverlapId);
+
                         if (!laneHasJunction.Contains(laneId))
                             laneHasJunction.Add(laneId);
+
+                        if (!laneHasPncJunction.Contains(laneId))
+                            laneHasPncJunction.Add(laneId);
                     }
 
                     // StopSign
@@ -1700,6 +1766,10 @@ namespace Simulator.Editor
                         var overlapId = HdId($"overlap_junction_I{intersections.IndexOf(intersection)}_J{junctionList.IndexOf(junction)}_stopsign{stopSignList.IndexOf(stopSign)}");
                         junctionOverlapsInfo.GetOrCreate(junctionId).stopSignOverlapIds.Add(stopSign.id, overlapId);
                         stopSignOverlapsInfo.GetOrCreate(stopSign.id).junctionOverlapIds.Add(junctionId, overlapId);
+
+                        var pncOverlapId = HdId($"overlap_pnc_junction_I{intersections.IndexOf(intersection)}_PNC_J{junctionList.IndexOf(junction)}_stopsign{stopSignList.IndexOf(stopSign)}");
+                        pncJunctionOverlapsInfo.GetOrCreate(pncJunctionId).stopSignOverlapIds.Add(stopSign.id, pncOverlapId);
+                        stopSignOverlapsInfo.GetOrCreate(stopSign.id).pncJunctionOverlapIds.Add(pncJunctionId, pncOverlapId);
                     }
 
                     // Signal
@@ -1709,6 +1779,10 @@ namespace Simulator.Editor
                         var overlapId = HdId($"overlap_junction_I{intersections.IndexOf(intersection)}_J{junctionList.IndexOf(junction)}_signal_{intersections.IndexOf(intersection)}_{signalList.IndexOf(signal)}");
                         junctionOverlapsInfo.GetOrCreate(junctionId).signalOverlapIds.Add(signal.id, overlapId);
                         signalOverlapsInfo.GetOrCreate(signal.id).junctionOverlapIds.Add(junctionId, overlapId);
+
+                        var pncOverlapId = HdId($"overlap_pnc_junction_I{intersections.IndexOf(intersection)}_PNC_J{junctionList.IndexOf(junction)}_signal_{intersections.IndexOf(intersection)}_{signalList.IndexOf(signal)}");
+                        pncJunctionOverlapsInfo.GetOrCreate(pncJunctionId).signalOverlapIds.Add(signal.id, pncOverlapId);
+                        signalOverlapsInfo.GetOrCreate(signal.id).pncJunctionOverlapIds.Add(pncJunctionId, pncOverlapId);
                     }
                 }
             }
@@ -1738,12 +1812,15 @@ namespace Simulator.Editor
                     }
 
                     string junctionId = null;
+                    string pncJunctionId = null;
                     foreach (var j in adMapJunctions.Where(j => j.Id == junction.id))
                     {
                         junctionId = j.Id;
+                        pncJunctionId = "PNC_" + j.Id;
                     }
 
                     var junctionOverlapIds_string = new List<HD.Id>();
+                    var pncJunctionOverlapIds_string = new List<HD.Id>();
 
                     // LaneSegment
                     var laneList = intersection.transform.GetComponentsInChildren<MapTrafficLane>().ToList();
@@ -1757,6 +1834,9 @@ namespace Simulator.Editor
 
                         var overlapId = junctionOverlapsInfo[junctionId].laneOverlapIds[lane.id];
                         junctionOverlapIds_string.Add(overlapId);
+
+                        var pncOverlapId = pncJunctionOverlapsInfo[pncJunctionId].laneOverlapIds[lane.id];
+                        pncJunctionOverlapIds_string.Add(pncOverlapId);
 
                         // Overlap Annotation
                         var objectLane = new HD.ObjectOverlapInfo()
@@ -1783,6 +1863,20 @@ namespace Simulator.Editor
                         overlap.@object.Add(objectLane);
                         overlap.@object.Add(objectJunction);
                         Hdmap.overlap.Add(overlap);
+
+                        var objectPncJunction = new HD.ObjectOverlapInfo()
+                        {
+                            id = HdId(pncJunctionId),
+                            pnc_junction_overlap_info = new HD.PNCJunctionOverlapInfo(),
+                        };
+
+                        var pncOverlap = new HD.Overlap()
+                        {
+                            id = pncOverlapId,
+                        };
+                        pncOverlap.@object.Add(objectLane);
+                        pncOverlap.@object.Add(objectPncJunction);
+                        Hdmap.overlap.Add(pncOverlap);
                     }
 
                     // StopSign
@@ -1790,8 +1884,10 @@ namespace Simulator.Editor
                     foreach (var stopSign in stopSignList)
                     {
                         var overlapId = junctionOverlapsInfo[junctionId].stopSignOverlapIds[stopSign.id];
-
                         junctionOverlapIds_string.Add(overlapId);
+
+                        var pncOverlapId = pncJunctionOverlapsInfo[pncJunctionId].stopSignOverlapIds[stopSign.id];
+                        pncJunctionOverlapIds_string.Add(pncOverlapId);
 
                         var objectStopSign = new HD.ObjectOverlapInfo()
                         {
@@ -1812,6 +1908,21 @@ namespace Simulator.Editor
                         overlap.@object.Add(objectStopSign);
                         overlap.@object.Add(objectJunction);
                         Hdmap.overlap.Add(overlap);
+
+                        var objectPncJunction = new HD.ObjectOverlapInfo()
+                        {
+                            id = HdId(pncJunctionId),
+                            pnc_junction_overlap_info = new HD.PNCJunctionOverlapInfo(),
+                        };
+
+                        var pncOverlap = new HD.Overlap()
+                        {
+                            id = pncOverlapId,
+                        };
+                        pncOverlap.@object.Add(objectStopSign);
+                        pncOverlap.@object.Add(objectPncJunction);
+                        Hdmap.overlap.Add(pncOverlap);
+
                     }
                     
                     // SignalLight
@@ -1820,6 +1931,9 @@ namespace Simulator.Editor
                     {
                         var overlapId = junctionOverlapsInfo[junctionId].signalOverlapIds[signal.id];
                         junctionOverlapIds_string.Add(overlapId);
+
+                        var pncOverlapId = pncJunctionOverlapsInfo[pncJunctionId].signalOverlapIds[signal.id];
+                        pncJunctionOverlapIds_string.Add(pncOverlapId);
 
                         var objectSignalLight = new HD.ObjectOverlapInfo()
                         {
@@ -1840,6 +1954,20 @@ namespace Simulator.Editor
                         overlap.@object.Add(objectSignalLight);
                         overlap.@object.Add(objectJunction);
                         Hdmap.overlap.Add(overlap);
+
+                        var objectPncJunction = new HD.ObjectOverlapInfo()
+                        {
+                            id = HdId(pncJunctionId),
+                            pnc_junction_overlap_info = new HD.PNCJunctionOverlapInfo(),
+                        };
+
+                        var pncOverlap = new HD.Overlap()
+                        {
+                            id = pncOverlapId,
+                        };
+                        pncOverlap.@object.Add(objectSignalLight);
+                        pncOverlap.@object.Add(objectPncJunction);
+                        Hdmap.overlap.Add(pncOverlap);
                     }
 
                     // Junction Annotation
@@ -1850,8 +1978,18 @@ namespace Simulator.Editor
                     };
                     junctionAnnotation.overlap_id.AddRange(junctionOverlapIds_string);
                     Hdmap.junction.Add(junctionAnnotation);
+
+                    var pncJunctionAnnotation = new HD.PNCJunction()
+                    {
+                        id = HdId(pncJunctionId),
+                        polygon = polygon,
+                    };
+                    pncJunctionAnnotation.overlap_id.AddRange(pncJunctionOverlapIds_string);
+                    Hdmap.pnc_junction.Add(pncJunctionAnnotation);
                }
             }
+
+            Debug.Log("!");
         }
 
         void MakeInfoOfParkingSpace()
